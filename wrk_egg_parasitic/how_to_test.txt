@@ -1,0 +1,15 @@
+HOW TO GENERATE THE TEST RESULT USING THE model.pth and config.py
+
+> CLONE THE REPO
+  git clone https://github.com/SnkrBhr16/mmdetection-parasitic-egg.git
+  
+> IN 'wrk_egg_parasitic' dir 
+  DOWNLOAD AND PUT THE model.pth (drive link)
+
+> INSTALL MMDETECTION
+  (Follow this tutorial)
+  https://github.com/SnkrBhr16/mmdetection-parasitic-egg/blob/master/demo/MMDet_Tutorial.ipynb                        
+
+> RUN THE COMMANT TO TEST (ind mmdetection dir)
+  
+  python tools/test.py wrk_egg_parasitic/config.py wrk_egg_parasitic/model.pth --format-only --eval-options "jsonfile_prefix=./wrk_egg_parasitic/result/res"
