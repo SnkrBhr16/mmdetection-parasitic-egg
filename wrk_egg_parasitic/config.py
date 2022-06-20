@@ -1,4 +1,14 @@
-
+runner = dict(type='EpochBasedRunner', max_epochs=200)
+checkpoint_config = dict(interval=10)
+log_config = dict(interval=50, hooks=[dict(type='TextLoggerHook')])
+dist_params = dict(backend='nccl')
+log_level = 'INFO'
+load_from = None
+resume_from = None
+workflow = [('train', 1)]
+opencv_num_threads = 0
+mp_start_method = 'fork'
+auto_scale_lr = dict(enable=False, base_batch_size=16)
 img_scale = (640, 640)
 model = dict(
     type='YOLOX',
@@ -15,15 +25,16 @@ model = dict(
         type='YOLOXHead', num_classes=80, in_channels=320, feat_channels=320),
     train_cfg=dict(assigner=dict(type='SimOTAAssigner', center_radius=2.5)),
     test_cfg=dict(score_thr=0.01, nms=dict(type='nms', iou_threshold=0.65)))
-data_root = '/home/dgxuser27/icip/Chula-Egg/'
+
+data_root = 'path/to/unlabeled'
+
 dataset_type = 'CocoDataset'
-train_pipeline = None
 classes = ('Ascaris lumbricoides', 'Capillaria philippinensis',
            'Enterobius vermicularis', 'Fasciolopsis buski', 'Hookworm egg',
            'Hymenolepis diminuta', 'Hymenolepis nana',
            'Opisthorchis viverrine', 'Paragonimus spp', 'Taenia spp. egg',
            'Trichuris trichiura')
-train_dataset = None
+
 test_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(
@@ -45,18 +56,33 @@ data = dict(
     samples_per_gpu=8,
     workers_per_gpu=6,
     persistent_workers=True,
-    train=None,
-    val=None,
+    val=dict(
+        type='CocoDataset',
+        ann_file= data_root + 'labeled/test/test.json',
+        img_prefix= data_root + 'labeled/data/',
+        classes=classes,
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(
+                type='MultiScaleFlipAug',
+                img_scale=(640, 640),
+                flip=False,
+                transforms=[
+                    dict(type='Resize', keep_ratio=True),
+                    dict(type='RandomFlip'),
+                    dict(
+                        type='Pad',
+                        pad_to_square=True,
+                        pad_val=dict(img=(114.0, 114.0, 114.0))),
+                    dict(type='DefaultFormatBundle'),
+                    dict(type='Collect', keys=['img'])
+                ])
+        ]),
     test=dict(
         type='CocoDataset',
-        ann_file=
-        './Chula-Egg/unlabeled/annotations/test.json',
-        img_prefix='./Chula-Egg/unlabeled/data/',
-        classes=('Ascaris lumbricoides', 'Capillaria philippinensis',
-                 'Enterobius vermicularis', 'Fasciolopsis buski',
-                 'Hookworm egg', 'Hymenolepis diminuta', 'Hymenolepis nana',
-                 'Opisthorchis viverrine', 'Paragonimus spp',
-                 'Taenia spp. egg', 'Trichuris trichiura'),
+        ann_file= data_root + 'unlabeled/annotations/test.json',
+        img_prefix= data_root + 'unlabeled/data/',
+        classes=classes,
         pipeline=[
             dict(type='LoadImageFromFile'),
             dict(
@@ -74,11 +100,8 @@ data = dict(
                     dict(type='Collect', keys=['img'])
                 ])
         ]))
-max_epochs = 200
-num_last_epochs = 15
-interval = 10
 evaluation = dict(
     save_best='auto', interval=10, dynamic_intervals=[(285, 1)], metric='bbox')
-work_dir = 'wrk_egg_parasatic'
+work_dir = 'wrk_icip_submition_test'
 auto_resume = False
 gpu_ids = range(0, 1)
